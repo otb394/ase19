@@ -13,7 +13,6 @@ class Num(object):
 
 
     def __add_num__(self, n):
-        print(n)
         self.col_count += 1
         self.lo = min(self.col_count, self.lo)
         self.high = max(self.col_count, self.high)

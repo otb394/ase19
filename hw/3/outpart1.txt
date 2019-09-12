@@ -1,0 +1,3 @@
+Task1: Sym
+Input: aaaabbc
+Entropy = 1.378783

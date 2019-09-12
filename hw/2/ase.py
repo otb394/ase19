@@ -14,8 +14,8 @@ class Num(object):
 
     def __add_num__(self, n):
         self.col_count += 1
-        self.lo = min(self.col_count, self.lo)
-        self.high = max(self.col_count, self.high)
+        self.lo = min(n, self.lo)
+        self.high = max(n, self.high)
         delta = n - self.mu;
         self.mu += delta / self.col_count
         self.m2 += delta * (n-self.mu)

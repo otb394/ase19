@@ -11,6 +11,11 @@ public class SymbolCell implements Cell {
     }
 
     @Override
+    public double likedBy(Sym sym, double prior, double pseudocountM) {
+        return sym.like(value, prior, pseudocountM);
+    }
+
+    @Override
     public void addTo(Col col) {
         col.add(value);
     }

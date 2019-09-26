@@ -2,20 +2,22 @@ public class Num extends Col {
     private int count;
     private double mean;
     private double m2;
-    private int hi;
-    private int lo;
+    private double hi;
+    private double lo;
+    private static final Double EPSILON = 1e-64;
+    private static final Double EPSILON2 = 1e-4;
 
     Num(int pos, String name) {
         super(pos, name);
         this.count = 0;
         this.mean = 0.0;
         this.m2 = 0.0;
-        this.hi = Integer.MIN_VALUE;
-        this.lo = Integer.MAX_VALUE;
+        this.hi = Double.MIN_VALUE;
+        this.lo = Double.MAX_VALUE;
     }
 
     @Override
-    public void add(int v) {
+    public void add(double v) {
         count++;
         double delta = v-mean;
         mean += delta / count;
@@ -24,9 +26,13 @@ public class Num extends Col {
         lo = Math.min(lo, v);
     }
 
-    @Override
-    public void add(String v) {
-        // Do nothing
+    public double like(double v) {
+        double sd = getSD();
+        double mean = getMean();
+        double variance = sd*sd;
+        double denom = Math.sqrt(Math.PI * 2.0 * variance);
+        double num = Math.exp(-((v - mean)*(v - mean))/(2.0 * variance + EPSILON2));
+        return num/(denom + EPSILON);
     }
 
     @Override

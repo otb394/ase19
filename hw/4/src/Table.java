@@ -1,5 +1,3 @@
-import org.w3c.dom.ls.LSOutput;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -68,6 +66,15 @@ public class Table extends TblObject {
         my = new My();
     }
 
+    Table(String title, List<Col> cols) {
+        super();
+        this.title = title;
+        this.rows = new ArrayList<>();
+        this.cols = new ArrayList<>();
+        this.my = new My();
+        createColumns(cols.stream().map(Col::getName).collect(Collectors.joining(",")));
+    }
+
     public void read(String fileName) {
         try (Stream<String> lineStream = Files.lines(Path.of(fileName))) {
             List<String> lines = lineStream.collect(Collectors.toList());
@@ -76,6 +83,57 @@ public class Table extends TblObject {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public List<Row> getRows() {
+        return rows.stream().filter(row -> !row.isSkipped()).collect(Collectors.toList());
+    }
+
+    public void process() {
+        rows.stream().filter(row -> !row.isSkipped()).forEachOrdered(this::process);
+    }
+
+    public void process(Row row) {
+        int noOfCols = cols.size();
+        List<Cell> cells = row.getCells();
+        for (int columnIndex = 0; columnIndex < noOfCols; columnIndex++) {
+            if (!cols.get(columnIndex).isSkipped()) {
+                cells.get(columnIndex).addTo(cols.get(columnIndex));
+            }
+        }
+    }
+
+    public Optional<Sym> getClassColumn() {
+        return Optional.ofNullable(my.classColumn);
+    }
+
+    public List<Sym> getSymbolXs() {
+        return my.xsyms;
+    }
+
+    public List<Num> getNumXs() {
+        return my.xnums;
+    }
+
+    public void print() {
+        printColumnNames();
+        rows.forEach(Row::print);
+    }
+
+    public void dump() {
+        Prefix prefix = new Prefix(0);
+        System.out.println(prefix + "t.cols");
+        dumpCols(prefix.next());
+        System.out.println(prefix + "t.my");
+        my.dump(prefix.next());
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public List<Col> getCols() {
+        return cols;
     }
 
     private void createColumns(String columnNames) {
@@ -152,35 +210,8 @@ public class Table extends TblObject {
         }
     }
 
-    public List<Row> getRows() {
-        return rows.stream().filter(row -> !row.isSkipped()).collect(Collectors.toList());
-    }
-
-    public void process() {
-        rows.stream().filter(row -> !row.isSkipped()).forEachOrdered(this::processRow);
-    }
-
-    public void processRow(Row row) {
-        int noOfCols = cols.size();
-        List<Cell> cells = row.getCells();
-        for (int columnIndex = 0; columnIndex < noOfCols; columnIndex++) {
-            if (!cols.get(columnIndex).isSkipped()) {
-                cells.get(columnIndex).addTo(cols.get(columnIndex));
-            }
-        }
-    }
-
-    public Optional<Sym> getClassColumn() {
-        return Optional.ofNullable(my.classColumn);
-    }
-
     private String replaceWhiteSpaceAndComments(String s) {
         return s.replaceAll("[\\s] | #.*", " ");
-    }
-
-    public void print() {
-        printColumnNames();
-        rows.forEach(Row::print);
     }
 
     private void printColumnNames() {
@@ -190,14 +221,6 @@ public class Table extends TblObject {
         System.out.println("]");
     }
 
-    public void dump() {
-        Prefix prefix = new Prefix(0);
-        System.out.println(prefix + "t.cols");
-        dumpCols(prefix.next());
-        System.out.println(prefix + "t.my");
-        my.dump(prefix.next());
-    }
-
     private void dumpRows(Prefix prefix) {
         List<Row> relevantRows = rows.stream().filter(row -> !row.isSkipped()).collect(Collectors.toList());
         int size = relevantRows.size();
@@ -205,10 +228,6 @@ public class Table extends TblObject {
             System.out.println(prefix.toString() + (rowIndex+1));
             relevantRows.get(rowIndex).dump(prefix.next());
         }
-    }
-
-    public String getTitle() {
-        return title;
     }
 
     private void dumpCols(Prefix prefix) {

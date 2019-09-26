@@ -27,6 +27,8 @@ public abstract class Col extends TblObject {
     }
 
     public abstract void dump(Prefix prefix);
-    public abstract void add(int v);
-    public abstract void add(String v);
+
+    public void add(double v) {}
+
+    public void add(String v) {}
 }

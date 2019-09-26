@@ -8,14 +8,29 @@ public class Main {
         System.out.println("#--- zerorok -----------------------");
         Table table = new Table("weathernon");
         table.read("4/input/weathernon.csv");
-        ZeroR zeroR = new ZeroR(table);
+        ZeroR zeroR = new ZeroR(table, 2);
         zeroR.run();
         zeroR.report();
 
         Table table1 = new Table("diabetes");
         table1.read("4/input/diabetes.csv");
-        ZeroR zeroR1 = new ZeroR(table1);
+        ZeroR zeroR1 = new ZeroR(table1, 2);
         zeroR1.run();
         zeroR1.report();
+
+        System.out.println();
+        System.out.println();
+        System.out.println("#--- nbok -----------------------");
+        Table table2 = new Table("weathernon");
+        table2.read("4/input/weathernon.csv");
+        NaiveBayesClassifier nb = new NaiveBayesClassifier(table2, 3);
+        nb.run();
+        nb.report();
+
+        Table table3 = new Table("diabetes");
+        table3.read("4/input/diabetes.csv");
+        NaiveBayesClassifier nb2 = new NaiveBayesClassifier(table3, 19);
+        nb2.run();
+        nb2.report();
     }
 }

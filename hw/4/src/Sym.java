@@ -43,6 +43,21 @@ public class Sym extends Col {
         }
     }
 
+    /**
+     * This gives the laplace estimate
+     */
+    public double like(String v, double pseudoCountK) {
+        int totalDistinct = frequencyMap.containsKey(v) ? frequencyMap.size() : frequencyMap.size() + 1;
+        return (frequencyMap.getOrDefault(v, 0) + pseudoCountK) / (count + totalDistinct*pseudoCountK);
+    }
+
+    /**
+     * This gives the M-estimate
+     */
+    public double like(String v, double prior, double pseudocountM) {
+        return (frequencyMap.getOrDefault(v, 0) + pseudocountM*prior) / (count + pseudocountM);
+    }
+
     public Double getEntropy() {
         return frequencyMap.values().stream()
                 .map(freq -> ((double)freq)/((double)count))
@@ -52,10 +67,5 @@ public class Sym extends Col {
 
     public String getMode() {
         return mode;
-    }
-
-    @Override
-    public void add(int v) {
-        //Do nothing
     }
 }

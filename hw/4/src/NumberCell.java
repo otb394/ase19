@@ -1,8 +1,13 @@
 public class NumberCell implements Cell {
-    private int value;
+    private double value;
 
-    NumberCell(int value) {
+    NumberCell(double value) {
         this.value = value;
+    }
+
+    @Override
+    public double likedBy(Num num) {
+        return num.like(value);
     }
 
     @Override
@@ -17,6 +22,6 @@ public class NumberCell implements Cell {
 
     @Override
     public String toString() {
-        return Integer.toString(value);
+        return Double.toString(value);
     }
 }

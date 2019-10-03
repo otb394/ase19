@@ -26,6 +26,16 @@ public class Num extends Col {
         lo = Math.min(lo, v);
     }
 
+    @Override
+    public void remove(double v) {
+        if (count == 0) return;
+        double delta = v-mean;
+        double diff = mean - v/count;
+        mean = diff * ((double)count/(((double)count)-1));
+        count--;
+        m2-=delta*(v-mean);
+    }
+
     public double like(double v) {
         double sd = getSD();
         double mean = getMean();
@@ -33,6 +43,11 @@ public class Num extends Col {
         double denom = Math.sqrt(Math.PI * 2.0 * variance);
         double num = Math.exp(-((v - mean)*(v - mean))/(2.0 * variance + EPSILON2));
         return num/(denom + EPSILON);
+    }
+
+    @Override
+    public double getVariety() {
+        return getSD();
     }
 
     @Override
@@ -49,13 +64,23 @@ public class Num extends Col {
         System.out.println(prefix + "txt: " + name);
     }
 
+    @Override
+    public int getCount() {
+        return count;
+    }
+
     private double getSD() {
         if (count < 2) return 0.0;
         if (m2 < 0.0) return 0.0;
         return Math.sqrt(m2/(count-1));
     }
 
-    private double getMean() {
+    public double getMean() {
         return mean;
+    }
+
+    @Override
+    public String getSummary() {
+        return String.format("%s.lo %.5f %s.hi %.5f", name, lo, name, hi);
     }
 }

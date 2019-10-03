@@ -1,4 +1,4 @@
-public interface Cell {
+public interface Cell extends Comparable<Cell> {
     void print();
     String toString();
 
@@ -7,6 +7,8 @@ public interface Cell {
     }
 
     void addTo(Col col);
+
+    void removeFrom(Col col);
 
     default double likedBy(Num num) {
         throw new RuntimeException("This should either be overriden or not called");

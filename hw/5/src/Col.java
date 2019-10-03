@@ -10,6 +10,10 @@ public abstract class Col extends TblObject {
         this.skipped = false;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public int getPos() {
         return this.pos;
     }
@@ -31,4 +35,19 @@ public abstract class Col extends TblObject {
     public void add(double v) {}
 
     public void add(String v) {}
+
+    public void remove(double v) {}
+
+    public void remove(String v) {}
+
+    public abstract double getVariety();
+
+    public abstract int getCount();
+
+    public abstract String getSummary();
+
+    public double xpect(Col col) {
+        int n = getCount() + col.getCount();
+        return (getCount() * getVariety() + col.getCount() * col.getVariety()) / ((double) n);
+    }
 }

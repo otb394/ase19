@@ -1,3 +1,9 @@
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Main {
     private static final int MAX = 1001;
@@ -5,32 +11,32 @@ public class Main {
     private static final double THRESHOLD = 0.001;
 
     public static void main(String[] args) {
-        System.out.println("#--- zerorok -----------------------");
-        Table table = new Table("weathernon");
-        table.read("4/input/weathernon.csv");
-        ZeroR zeroR = new ZeroR(table, 2);
-        zeroR.run();
-        zeroR.report();
-
-        Table table1 = new Table("diabetes");
-        table1.read("4/input/diabetes.csv");
-        ZeroR zeroR1 = new ZeroR(table1, 2);
-        zeroR1.run();
-        zeroR1.report();
-
+        run("num.txt", () -> new Num(0, "Num"), () -> new Num(0, "Num"));
         System.out.println();
-        System.out.println();
-        System.out.println("#--- nbok -----------------------");
-        Table table2 = new Table("weathernon");
-        table2.read("4/input/weathernon.csv");
-        NaiveBayesClassifier nb = new NaiveBayesClassifier(table2, 3);
-        nb.run();
-        nb.report();
+        run("symbol.txt", () -> new Num(0, "Num"), () -> new Sym(0, "Sym"));
+    }
 
-        Table table3 = new Table("diabetes");
-        table3.read("4/input/diabetes.csv");
-        NaiveBayesClassifier nb2 = new NaiveBayesClassifier(table3, 19);
-        nb2.run();
-        nb2.report();
+    private static void run(String fileName, Supplier<Num> xSupplier, Supplier<Col> ySupplier) {
+        try(Stream<String> data = Files.lines(Path.of("5/input/" + fileName))) {
+            List<Pair<NumberCell, Cell>> input = data.map(Main::getDataPoint).collect(Collectors.toList());
+            DecisionTreeLearner learner = new DecisionTreeLearner(input, xSupplier, ySupplier);
+            List<Pair<Col, Col>> ranges = learner.getRanges();
+            for (int i = 0; i < ranges.size(); i++) {
+                print(i+1, ranges.get(i).getLeft(), ranges.get(i).getRight());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static Pair<NumberCell, Cell> getDataPoint(String line) {
+        String[] elements = line.split(",");
+        return Pair.of(NumberCell.of(elements[0].strip()), Cell.of(elements[1].strip()));
+    }
+
+    private static void print(int index, Col x, Col y) {
+        x.setName("x");
+        y.setName("y");
+        System.out.printf("%d x.n%5d | %s | %s\n", index, x.getCount(), x.getSummary(), y.getSummary());
     }
 }

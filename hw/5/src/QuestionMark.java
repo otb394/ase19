@@ -27,4 +27,12 @@ public class QuestionMark implements Cell {
     public String toString() {
         return "?";
     }
+
+    @Override
+    public int compareTo(Cell cell) {
+        return CellComparator.compare(this, cell);
+    }
+
+    @Override
+    public void removeFrom(Col col) { }
 }

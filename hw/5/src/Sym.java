@@ -33,6 +33,25 @@ public class Sym extends Col {
     }
 
     @Override
+    public double getVariety() {
+        return getEntropy();
+    }
+
+    @Override
+    public void remove(String v) {
+        // We are not modifying the mode in this
+        int count = frequencyMap.getOrDefault(v, 0);
+        if (count > 0) {
+            if (count != 1) {
+                frequencyMap.put(v, count - 1);
+            } else {
+                frequencyMap.remove(v);
+            }
+            this.count--;
+        }
+    }
+
+    @Override
     public void add(String v) {
         count++;
         int newFreq = frequencyMap.getOrDefault(v, 0) + 1;
@@ -41,6 +60,11 @@ public class Sym extends Col {
             modeCount = newFreq;
             mode = v;
         }
+    }
+
+    @Override
+    public int getCount() {
+        return count;
     }
 
     /**
@@ -67,5 +91,10 @@ public class Sym extends Col {
 
     public String getMode() {
         return mode;
+    }
+
+    @Override
+    public String getSummary() {
+        return String.format("%s.mode %s %s.ent %5.4f", name, mode, name, getEntropy());
     }
 }

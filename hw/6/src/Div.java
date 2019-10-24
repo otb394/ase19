@@ -4,7 +4,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class DecisionTreeLearner {
+public class Div {
     private static final double COHEN = 0.3;
     private static final double TRIVIAL = 1.025;
     private List<Pair<NumberCell, Cell>> data;
@@ -17,9 +17,9 @@ public class DecisionTreeLearner {
     private double gain;
     private List<Pair<Col, Col>> ranges;
 
-    public DecisionTreeLearner(List<Pair<NumberCell, Cell>> data,
-                               Supplier<Num> xSupplier,
-                               Supplier<Col> ySupplier) {
+    public Div(List<Pair<NumberCell, Cell>> data,
+               Supplier<Num> xSupplier,
+               Supplier<Col> ySupplier) {
         this.data = data.stream().map(Pair.ComparablePair::of).sorted().collect(Collectors.toList());
         this.xSupplier = xSupplier;
         this.ySupplier = ySupplier;
@@ -36,6 +36,10 @@ public class DecisionTreeLearner {
 
     public List<Pair<Col, Col>> getRanges() {
         return ranges;
+    }
+
+    public double getGain() {
+        return gain;
     }
 
     private void divide(int low, int high, Col xCol, Col yCol) {

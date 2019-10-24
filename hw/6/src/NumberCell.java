@@ -68,4 +68,11 @@ public class NumberCell implements Cell {
     public int hashCode() {
         return Objects.hash(value);
     }
+
+    @Override
+    public boolean within(NumericalRange numericalRange) {
+        boolean lowBound = numericalRange.getLow().map(lo -> value >= lo).orElse(true);
+        boolean highBound = numericalRange.getHigh().map(hi -> value <= hi).orElse(true);
+        return lowBound && highBound;
+    }
 }

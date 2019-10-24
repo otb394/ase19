@@ -83,4 +83,14 @@ public class Num extends Col {
     public String getSummary() {
         return String.format("%s.lo %.5f %s.hi %.5f", name, lo, name, hi);
     }
+
+    @Override
+    public String getMiddle() {
+        return Double.toString(getMean());
+    }
+
+    @Override
+    public Range toRange() {
+        return new NumericalRange(lo, hi);
+    }
 }

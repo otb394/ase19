@@ -46,8 +46,12 @@ public abstract class Col extends TblObject {
 
     public abstract String getSummary();
 
+    public abstract String getMiddle();
+
     public double xpect(Col col) {
         int n = getCount() + col.getCount();
         return (getCount() * getVariety() + col.getCount() * col.getVariety()) / ((double) n);
     }
+
+    public abstract Range toRange();
 }

@@ -2,8 +2,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -12,6 +15,10 @@ public class Table extends TblObject {
     private List<Row> rows;
     private List<Col> cols;
     private My my;
+
+    private static class TreeConstants {
+        private static final int MIN_OBS = 4;
+    }
 
     public class My {
         private List<Col> goals;
@@ -236,5 +243,93 @@ public class Table extends TblObject {
             System.out.println(prefix.toString() + (colIndex + 1));
             relevantCols.get(colIndex).dump(prefix.next());
         }
+    }
+
+    public Tree decisionTree() {
+        return tree(rows.stream().filter(row -> !row.isSkipped()).collect(Collectors.toList()),
+                row -> row.getCells().get(my.classPos - 1), () -> new Sym(my.classPos, my.classColumn.getName()), 0);
+    }
+
+    public Tree regressionTree() {
+        Col goalCol = cols.get(cols.size() - 1); // Need to handle !$mpg properly
+        return tree(rows.stream().filter(row -> !row.isSkipped()).collect(Collectors.toList()),
+                row -> row.getCells().get(cols.size() - 1), () -> new Num(goalCol.getPos(), goalCol.getName()), 0);
+    }
+
+    private Tree tree(List<Row> rows, Function<Row, Cell> y, Supplier<Col> ySupplier, int lvl) {
+        if (rows.size() >= (TreeConstants.MIN_OBS * 2)) {
+            double lo = -1.0;
+            List<Pair<Col, Col>> cut = null;
+            Num col = null;
+            for (Num num: my.xnums) {
+                if (num.getPos() == cols.size()) { // Hack
+                    continue;
+                }
+                List<Pair<NumberCell, Cell>> data = rows.stream()
+                        .map(row -> getNumCell(row, num.getPos() - 1)
+                                .map(numCell -> Pair.of(numCell, y.apply(row))))
+                        .flatMap(Optional::stream)
+                        .collect(Collectors.toList());
+                Div div = new Div(data, () -> new Num(num.getPos(), num.getName()), ySupplier);
+                List<Pair<Col, Col>> cut1 = div.getRanges();
+                if (cut1.size() > 1) {
+                    double lo1 = div.getGain();
+                    if (lo == -1.0 || lo1 < lo) {
+                        lo = lo1;
+                        cut = cut1;
+                        col = num;
+                    }
+                }
+            }
+            if (cut != null) {
+                String colName = col.getName();
+                final int index = col.getPos() - 1;
+                List<Row> relevantRows = rows.stream().filter(row -> getNumCell(row, index).isPresent())
+                        .collect(Collectors.toList());
+                List<Pair<Range, Tree>> kids =
+                        split(relevantRows,
+                                row -> row.getCells().get(index),
+                                cut.stream().map(Pair::getLeft).collect(Collectors.toList()))
+                                .stream()
+                                .map(pr -> Pair.of(pr.getLeft(), tree(pr.getRight(), y, ySupplier, lvl + 1)))
+                                .collect(Collectors.toList());
+                return new InnerTreeNode(kids, colName);
+            }
+        }
+        return new Leaf(getCol(rows, y, ySupplier));
+    }
+
+    private List<Pair<Range, List<Row>>> split(List<Row> rows, Function<Row, Cell> x, List<Col> xRanges) {
+        List<Range> ranges = xRanges.stream().map(Col::toRange).sorted().collect(Collectors.toList());
+        rows.sort(Comparator.comparing(x));
+        int i = 0;
+        List<Pair<Range, List<Row>>> result = new ArrayList<>();
+        int n = rows.size();
+        int m = xRanges.size();
+        for (int j = 0; j < m; j++) {
+            List<Row> rangeRows = new ArrayList<>();
+            Range range = ranges.get(j);
+            while(i<n && range.contains(x.apply(rows.get(i)))) {
+                rangeRows.add(rows.get(i));
+                i++;
+            }
+            result.add(Pair.of(range, rangeRows));
+        }
+        return result;
+    }
+
+    private <T> Col getCol(List<T> list, Function<? super T, ? extends Cell> function, Supplier<Col> supplier) {
+        Col col = supplier.get();
+        for (T element: list) {
+            Cell cell = function.apply(element);
+            cell.addTo(col);
+        }
+        return col;
+    }
+
+    private Optional<NumberCell> getNumCell(Row row, int index) {
+        Cell cell = row.getCells().get(index);
+        if (cell instanceof QuestionMark || cell instanceof SymbolCell) return Optional.empty();
+        else return Optional.ofNullable((NumberCell) cell);
     }
 }

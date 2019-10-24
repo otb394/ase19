@@ -10,6 +10,10 @@ public interface Cell extends Comparable<Cell> {
 
     void removeFrom(Col col);
 
+    default boolean within(NumericalRange numericalRange) {
+        return false;
+    }
+
     default double likedBy(Num num) {
         throw new RuntimeException("This should either be overriden or not called");
     }

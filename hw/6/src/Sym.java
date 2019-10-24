@@ -97,4 +97,14 @@ public class Sym extends Col {
     public String getSummary() {
         return String.format("%s.mode %s %s.ent %5.4f", name, mode, name, getEntropy());
     }
+
+    @Override
+    public String getMiddle() {
+        return getMode();
+    }
+
+    @Override
+    public Range toRange() {
+        return null;
+    }
 }

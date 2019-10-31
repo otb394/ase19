@@ -1,3 +1,6 @@
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 public class Num extends Col {
     private int count;
     private double mean;
@@ -81,7 +84,8 @@ public class Num extends Col {
 
     @Override
     public String getSummary() {
-        return String.format("%s.lo %.5f %s.hi %.5f", name, lo, name, hi);
+        return String.format("%s = %.1f (%.1f)", name, getMean(), getSD());
+//        return String.format("%s.lo %.5f %s.hi %.5f", name, lo, name, hi);
     }
 
     @Override
@@ -92,5 +96,39 @@ public class Num extends Col {
     @Override
     public Range toRange() {
         return new NumericalRange(lo, hi);
+    }
+
+    @Override
+    public double diffMiddle(Col other) {
+        if (other instanceof Num) {
+            Num otherNum = (Num) other;
+            return getMean() - otherNum.getMean();
+        } else {
+            return Double.MAX_VALUE;
+        }
+    }
+
+    @Override
+    public Supplier<Col> getSupplier() {
+        return () -> new Num(pos, name);
+    }
+
+    @Override
+    public double dis(Cell a, Cell b) {
+        Function<Cell, Double> normalize = cell -> ((hi != lo) ? (cell.diff(new NumberCell(lo)) / (hi - lo)) : (0.0));
+        double aNorm, bNorm;
+        if (a.isSkipped()) {
+            if (b.isSkipped()) return 1.0;
+            bNorm = normalize.apply(b);
+            aNorm = (bNorm > 0.5) ? 0 : 1;
+        } else {
+            aNorm = normalize.apply(a);
+            if (b.isSkipped()) {
+                bNorm = (aNorm > 0.5) ? 0 : 1;
+            } else {
+                bNorm = normalize.apply(b);
+            }
+        }
+        return Math.abs(aNorm - bNorm);
     }
 }

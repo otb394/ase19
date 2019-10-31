@@ -35,4 +35,9 @@ public class QuestionMark implements Cell {
 
     @Override
     public void removeFrom(Col col) { }
+
+    @Override
+    public double diff(Cell cell) {
+        return 1.0;
+    }
 }

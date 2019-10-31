@@ -53,4 +53,18 @@ public class SymbolCell implements Cell {
     public int hashCode() {
         return Objects.hash(value);
     }
+
+    @Override
+    public boolean within(SymbolicRange symbolicRange) {
+        return symbolicRange.getSymbols().contains(value);
+    }
+
+    @Override
+    public double diff(Cell cell) {
+        if (this.equals(cell)) {
+            return 0.0;
+        } else {
+            return 1.0;
+        }
+    }
 }

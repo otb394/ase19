@@ -1,5 +1,6 @@
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class Sym extends Col {
     private Map<String, Integer> frequencyMap;
@@ -105,6 +106,11 @@ public class Sym extends Col {
 
     @Override
     public Range toRange() {
-        return null;
+        return new SymbolicRange(frequencyMap.keySet());
+    }
+
+    @Override
+    public Supplier<Col> getSupplier() {
+        return () -> new Sym(pos, name);
     }
 }

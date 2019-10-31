@@ -1,3 +1,5 @@
+import java.util.function.Supplier;
+
 public abstract class Col extends TblObject {
     protected int pos;
     protected String name;
@@ -32,7 +34,9 @@ public abstract class Col extends TblObject {
 
     public abstract void dump(Prefix prefix);
 
-    public void add(double v) {}
+    public void add(double v) {
+        add(Double.toString(v));
+    }
 
     public void add(String v) {}
 
@@ -47,6 +51,21 @@ public abstract class Col extends TblObject {
     public abstract String getSummary();
 
     public abstract String getMiddle();
+
+    public double diffMiddle(Col other) {
+        String otherMiddle = other.getMiddle();
+        if (getMiddle().equals(otherMiddle)) {
+            return 0.0;
+        } else {
+            return Double.MAX_VALUE;
+        }
+    }
+
+    public double dis(Cell a, Cell b) {
+        return a.diff(b);
+    }
+
+    public abstract Supplier<Col> getSupplier();
 
     public double xpect(Col col) {
         int n = getCount() + col.getCount();

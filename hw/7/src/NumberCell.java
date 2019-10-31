@@ -75,4 +75,19 @@ public class NumberCell implements Cell {
         boolean highBound = numericalRange.getHigh().map(hi -> value <= hi).orElse(true);
         return lowBound && highBound;
     }
+
+    @Override
+    public double diff(Cell cell) {
+        if (cell instanceof NumberCell) {
+            NumberCell other = (NumberCell) cell;
+            return value - other.getValue();
+        } else {
+            return Double.MAX_VALUE;
+        }
+    }
+
+    @Override
+    public boolean within(SymbolicRange symbolicRange) {
+        return symbolicRange.getSymbols().contains(Double.toString(value));
+    }
 }

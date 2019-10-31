@@ -1,6 +1,8 @@
 import java.util.List;
 
 public class Row extends TblObject {
+    // For distance function
+    private static final int P = 2;
     private int pos;
     private List<Cell> cells;
     private boolean isSkipped;
@@ -48,6 +50,17 @@ public class Row extends TblObject {
             cells.get(cellIndex).print();
             System.out.println();
         }
+    }
+
+    public double dis(Row other, List<Col> cols) {
+        double d = 0.0;
+        int n = 0;
+        for(Col col: cols) {
+            n++;
+            double d0 = col.dis(this.getCells().get(col.getPos() - 1), other.getCells().get(col.getPos() - 1));
+            d += Math.pow(d0, P);
+        }
+        return Math.pow(d, (1.0/((double)P))) / Math.pow(n, (1.0/((double)P)));
     }
 
     public boolean isSkipped() {

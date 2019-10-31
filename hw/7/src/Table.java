@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -183,6 +184,12 @@ public class Table extends TblObject {
                     my.classPos = sym.getPos();
                     my.classColumn = sym;
                     break;
+                case EXCLAMATION_DOLLAR:
+                    num = new Num(columnIndex+1, columnName);
+                    col = num;
+                    my.nums.add(num);
+                    my.goals.add(col);
+                    break;
                 case OTHER:
                 default:
                     sym = new Sym(columnIndex+1, columnName);
@@ -202,8 +209,13 @@ public class Table extends TblObject {
         } else {
             String[] rawCells = strippedRow.split(",");
             List<Cell> cells = new ArrayList<>();
-            for (String rawCell : rawCells) {
-                Cell cell = Cell.of(rawCell);
+            for (int i = 0; i < rawCells.length; i++) {
+                boolean knownSymbolCol = false;
+                if (i < cols.size()) {
+                    Col col = cols.get(i);
+                    knownSymbolCol = col instanceof Sym;
+                }
+                Cell cell = Cell.of(rawCells[i], knownSymbolCol);
                 cells.add(cell);
             }
             addRow(new Row(rows.size() + 1, cells, false));
@@ -251,40 +263,123 @@ public class Table extends TblObject {
     }
 
     public Tree regressionTree() {
-        Col goalCol = cols.get(cols.size() - 1); // Need to handle !$mpg properly
+        Col goalCol = my.goals.get(my.goals.size() - 1);
         return tree(rows.stream().filter(row -> !row.isSkipped()).collect(Collectors.toList()),
                 row -> row.getCells().get(cols.size() - 1), () -> new Num(goalCol.getPos(), goalCol.getName()), 0);
+    }
+
+    public Tree clusteringTree() {
+        List<Row> rows = getRows();
+        int n = rows.size();
+        int s = (int) Math.sqrt(n);
+        return cluster(rows, s);
+    }
+
+    private Tree cluster(List<Row> rows, int minSize) {
+        int N = rows.size();
+        double n = N/2.0;
+        if (N < minSize) {
+            return new ClusterLeaf(rows, my.goals);
+        } else {
+            int trialCount = 10;
+            double best = -1.0;
+            Row x = null;
+            Row y = null;
+            for (int i = 0; i < trialCount; i++) {
+                Pair<Row, Row> pr = getPivotPoints(rows);
+                long leftCount = rows.stream()
+                        .filter(row -> row.dis(pr.getLeft(), my.xs) <= row.dis(pr.getRight(), my.xs))
+                        .count();
+                double tempB = Math.abs(n - leftCount);
+                if (best == -1.0 || tempB < best) {
+                    best = tempB;
+                    x = pr.getLeft();
+                    y = pr.getRight();
+                }
+            }
+
+            List<Row> left = new ArrayList<>();
+            List<Row> right = new ArrayList<>();
+            double c = x.dis(y, my.xs);
+            Row finalX = x;
+            Row finalY = y;
+            List<Pair<Double, Row>> cosineDistances = rows.stream()
+                    .map(row -> Pair.of(getCosineDistance(finalX, finalY, c, row), row))
+                    .sorted(Comparator.comparing(Pair::getLeft))
+                    .collect(Collectors.toList());
+            int medIndex = (N-1)/2;
+            for (int i = 0; i <= medIndex; i++) {
+                left.add(cosineDistances.get(i).getRight());
+            }
+            for (int i = medIndex+1; i < N; i++) {
+                right.add(cosineDistances.get(i).getRight());
+            }
+            if (left.size() < minSize || right.size() < minSize) {
+                return new ClusterLeaf(rows, my.goals);
+            } else {
+                return new BinaryInnerTreeNode(cluster(left, minSize), cluster(right, minSize));
+            }
+        }
+    }
+
+    private double getCosineDistance(Row x, Row y, double c, Row z) {
+        double a = x.dis(z, my.xs);
+        double b = z.dis(y, my.xs);
+        return (a*a + c*c - b*b) / (2.0*c);
+    }
+
+    private Pair<Row, Row> getPivotPoints(List<Row> rows) {
+        int n = rows.size();
+        int randomIndex = new Random().nextInt(n);
+        if (randomIndex < 0 || randomIndex >= n) {
+            throw new RuntimeException("Error in generating random index");
+        }
+        Row randomPoint = rows.get(randomIndex);
+        double max = -1;
+        Row x = null;
+        for (Row thisRow : rows) {
+            double dis = thisRow.dis(randomPoint, my.xs);
+            if (max == -1 || dis > max) {
+                max = dis;
+                x = thisRow;
+            }
+        }
+        Row finalX = x;
+        List<Pair<Double, Row>> sortedPointsFromX = rows.stream().map(row -> Pair.of(row.dis(finalX, my.xs), row))
+                .filter(pr -> pr.getRight() != finalX)
+                .sorted(Comparator.comparing(Pair::getLeft))
+                .collect(Collectors.toList());
+        int m = sortedPointsFromX.size();
+        int yIndex = (int) (0.9*m);
+        return Pair.of(x, sortedPointsFromX.get(yIndex).getRight());
     }
 
     private Tree tree(List<Row> rows, Function<Row, Cell> y, Supplier<Col> ySupplier, int lvl) {
         if (rows.size() >= (TreeConstants.MIN_OBS * 2)) {
             double lo = -1.0;
             List<Pair<Col, Col>> cut = null;
-            Num col = null;
-            for (Num num: my.xnums) {
-                if (num.getPos() == cols.size()) { // Hack
-                    continue;
-                }
-                List<Pair<NumberCell, Cell>> data = rows.stream()
-                        .map(row -> getNumCell(row, num.getPos() - 1)
-                                .map(numCell -> Pair.of(numCell, y.apply(row))))
+            Col col = null;
+            for (Col xCol: my.xs) {
+                List<Pair<Cell, Cell>> data = rows.stream()
+                        .map(row -> getCell(row, xCol.getPos() - 1)
+                                .map(cell -> Pair.of(cell, y.apply(row))))
                         .flatMap(Optional::stream)
                         .collect(Collectors.toList());
-                Div div = new Div(data, () -> new Num(num.getPos(), num.getName()), ySupplier);
+                Div div = new Div(data, xCol.getSupplier(), ySupplier);
                 List<Pair<Col, Col>> cut1 = div.getRanges();
                 if (cut1.size() > 1) {
                     double lo1 = div.getGain();
                     if (lo == -1.0 || lo1 < lo) {
                         lo = lo1;
                         cut = cut1;
-                        col = num;
+                        col = xCol;
                     }
                 }
             }
             if (cut != null) {
                 String colName = col.getName();
                 final int index = col.getPos() - 1;
-                List<Row> relevantRows = rows.stream().filter(row -> getNumCell(row, index).isPresent())
+                List<Row> relevantRows = rows.stream().filter(row -> getCell(row, index).isPresent())
                         .collect(Collectors.toList());
                 List<Pair<Range, Tree>> kids =
                         split(relevantRows,
@@ -327,9 +422,8 @@ public class Table extends TblObject {
         return col;
     }
 
-    private Optional<NumberCell> getNumCell(Row row, int index) {
+    private Optional<Cell> getCell(Row row, int index) {
         Cell cell = row.getCells().get(index);
-        if (cell instanceof QuestionMark || cell instanceof SymbolCell) return Optional.empty();
-        else return Optional.ofNullable((NumberCell) cell);
+        return cell.isSkipped() ? Optional.empty() : Optional.of(cell);
     }
 }

@@ -9,4 +9,9 @@ public class Leaf implements Tree {
     public void print(Prefix prefix) {
         System.out.print(" : " + col.getMiddle() + "(" + col.getCount() + ")");
     }
+
+    @Override
+    public int size() {
+        return col.getCount();
+    }
 }

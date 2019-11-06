@@ -19,12 +19,12 @@ public class Div {
 
     public Div(List<Pair<Cell, Cell>> data,
                Supplier<Col> xSupplier,
-               Supplier<Col> ySupplier) {
+               Supplier<Col> ySupplier, int steps) {
         this.data = data.stream().map(Pair.ComparablePair::of).sorted().collect(Collectors.toList());
         this.xSupplier = xSupplier;
         this.ySupplier = ySupplier;
         int count = data.size();
-        this.steps = (int) Math.floor(Math.sqrt(count));
+        this.steps = steps;
         this.start = this.data.get(0).getLeft();
         this.stop = this.data.get(count-1).getLeft();
         Col bf4 = getCol(this.data, Pair::getLeft, xSupplier);

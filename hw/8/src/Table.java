@@ -258,14 +258,18 @@ public class Table extends TblObject {
     }
 
     public Tree decisionTree() {
-        return tree(rows.stream().filter(row -> !row.isSkipped()).collect(Collectors.toList()),
-                row -> row.getCells().get(my.classPos - 1), () -> new Sym(my.classPos, my.classColumn.getName()), 0);
+        List<Row> rows = getRows();
+        int steps = (int) Math.floor(Math.sqrt(rows.size()));
+        return tree(rows, row -> row.getCells().get(my.classPos - 1),
+                () -> new Sym(my.classPos, my.classColumn.getName()), 0, steps);
     }
 
     public Tree regressionTree() {
         Col goalCol = my.goals.get(my.goals.size() - 1);
-        return tree(rows.stream().filter(row -> !row.isSkipped()).collect(Collectors.toList()),
-                row -> row.getCells().get(cols.size() - 1), () -> new Num(goalCol.getPos(), goalCol.getName()), 0);
+        List<Row> rows = getRows();
+        int steps = (int) Math.floor(Math.sqrt(rows.size()));
+        return tree(rows, row -> row.getCells().get(cols.size() - 1),
+                () -> new Num(goalCol.getPos(), goalCol.getName()), 0, steps);
     }
 
     public Tree clusteringTree() {
@@ -354,7 +358,7 @@ public class Table extends TblObject {
         return Pair.of(x, sortedPointsFromX.get(yIndex).getRight());
     }
 
-    private Tree tree(List<Row> rows, Function<Row, Cell> y, Supplier<Col> ySupplier, int lvl) {
+    private Tree tree(List<Row> rows, Function<Row, Cell> y, Supplier<Col> ySupplier, int lvl, int steps) {
         if (rows.size() >= (TreeConstants.MIN_OBS * 2)) {
             double lo = -1.0;
             List<Pair<Col, Col>> cut = null;
@@ -365,7 +369,7 @@ public class Table extends TblObject {
                                 .map(cell -> Pair.of(cell, y.apply(row))))
                         .flatMap(Optional::stream)
                         .collect(Collectors.toList());
-                Div div = new Div(data, xCol.getSupplier(), ySupplier);
+                Div div = new Div(data, xCol.getSupplier(), ySupplier, steps);
                 List<Pair<Col, Col>> cut1 = div.getRanges();
                 if (cut1.size() > 1) {
                     double lo1 = div.getGain();
@@ -386,7 +390,7 @@ public class Table extends TblObject {
                                 row -> row.getCells().get(index),
                                 cut.stream().map(Pair::getLeft).collect(Collectors.toList()))
                                 .stream()
-                                .map(pr -> Pair.of(pr.getLeft(), tree(pr.getRight(), y, ySupplier, lvl + 1)))
+                                .map(pr -> Pair.of(pr.getLeft(), tree(pr.getRight(), y, ySupplier, lvl + 1, steps)))
                                 .collect(Collectors.toList());
                 return new InnerTreeNode(kids, colName);
             }

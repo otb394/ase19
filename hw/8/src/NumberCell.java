@@ -14,7 +14,7 @@ public class NumberCell implements Cell {
 
     @Override
     public void print() {
-        System.out.print(value);
+        System.out.printf("%.2f", value);
     }
 
     @Override

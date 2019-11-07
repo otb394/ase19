@@ -1,4 +1,5 @@
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class InnerTreeNode implements Tree {
     private List<Pair<Range, Tree>> kids;
@@ -22,5 +23,10 @@ public class InnerTreeNode implements Tree {
     @Override
     public int size() {
         return size;
+    }
+
+    @Override
+    public List<Cluster> getClusters() {
+        return kids.stream().flatMap(kid -> kid.getRight().getClusters().stream()).collect(Collectors.toList());
     }
 }

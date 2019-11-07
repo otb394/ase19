@@ -9,7 +9,7 @@ public class Sym extends Col {
     private int modeCount;
 
     public Sym(int pos, String name) {
-        super(pos, name);
+        super(pos, name, 1);
         this.frequencyMap = new HashMap<>();
         this.count = 0;
         this.mode = null;
@@ -100,8 +100,8 @@ public class Sym extends Col {
     }
 
     @Override
-    public String getMiddle() {
-        return getMode();
+    public Cell getMiddle() {
+        return new SymbolCell(getMode());
     }
 
     @Override

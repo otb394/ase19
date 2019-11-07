@@ -11,7 +11,16 @@ public class Num extends Col {
     private static final Double EPSILON2 = 1e-4;
 
     Num(int pos, String name) {
-        super(pos, name);
+        super(pos, name, 1);
+        this.count = 0;
+        this.mean = 0.0;
+        this.m2 = 0.0;
+        this.hi = Double.MIN_VALUE;
+        this.lo = Double.MAX_VALUE;
+    }
+
+    Num(int pos, String name, int weight) {
+        super(pos, name, weight);
         this.count = 0;
         this.mean = 0.0;
         this.m2 = 0.0;
@@ -89,8 +98,8 @@ public class Num extends Col {
     }
 
     @Override
-    public String getMiddle() {
-        return Double.toString(getMean());
+    public Cell getMiddle() {
+        return new NumberCell(getMean());
     }
 
     @Override
@@ -99,18 +108,8 @@ public class Num extends Col {
     }
 
     @Override
-    public double diffMiddle(Col other) {
-        if (other instanceof Num) {
-            Num otherNum = (Num) other;
-            return getMean() - otherNum.getMean();
-        } else {
-            return Double.MAX_VALUE;
-        }
-    }
-
-    @Override
     public Supplier<Col> getSupplier() {
-        return () -> new Num(pos, name);
+        return () -> new Num(pos, name, weight);
     }
 
     @Override
@@ -130,5 +129,10 @@ public class Num extends Col {
             }
         }
         return Math.abs(aNorm - bNorm);
+    }
+
+    @Override
+    public double norm(Cell cell) {
+        return ((hi != lo) ? (cell.diff(new NumberCell(lo)) / (hi - lo)) : (0.0));
     }
 }

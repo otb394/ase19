@@ -119,8 +119,16 @@ public class Table extends TblObject {
         return my.xsyms;
     }
 
+    public List<Col> getGoals() {
+        return my.goals;
+    }
+
     public List<Num> getNumXs() {
         return my.xnums;
+    }
+
+    public List<Col> getXs() {
+        return my.xs;
     }
 
     public void print() {
@@ -157,7 +165,7 @@ public class Table extends TblObject {
                     col.skip();
                     break;
                 case LESS:
-                    Num num = new Num(columnIndex+1, columnName);
+                    Num num = new Num(columnIndex+1, columnName, -1);
                     col = num;
                     my.nums.add(num);
                     my.goals.add(col);
@@ -222,7 +230,7 @@ public class Table extends TblObject {
         }
     }
 
-    private void addRow(Row row) {
+    public void addRow(Row row) {
         rows.add(row);
         if (row.getCells().size() != cols.size()) {
             row.skip();
@@ -268,8 +276,7 @@ public class Table extends TblObject {
         Col goalCol = my.goals.get(my.goals.size() - 1);
         List<Row> rows = getRows();
         int steps = (int) Math.floor(Math.sqrt(rows.size()));
-        return tree(rows, row -> row.getCells().get(cols.size() - 1),
-                () -> new Num(goalCol.getPos(), goalCol.getName()), 0, steps);
+        return tree(rows, row -> row.getCells().get(cols.size() - 1), goalCol.getSupplier(), 0, steps);
     }
 
     public Tree clusteringTree() {
@@ -283,7 +290,7 @@ public class Table extends TblObject {
         int N = rows.size();
         double n = N/2.0;
         if (N < minSize) {
-            return new ClusterLeaf(rows, my.goals);
+            return new ClusterLeaf(rows, my.goals, cols);
         } else {
             int trialCount = 10;
             double best = -1.0;
@@ -319,7 +326,7 @@ public class Table extends TblObject {
                 right.add(cosineDistances.get(i).getRight());
             }
             if (left.size() < minSize || right.size() < minSize) {
-                return new ClusterLeaf(rows, my.goals);
+                return new ClusterLeaf(rows, my.goals, cols);
             } else {
                 return new BinaryInnerTreeNode(cluster(left, minSize), cluster(right, minSize));
             }
@@ -358,7 +365,7 @@ public class Table extends TblObject {
         return Pair.of(x, sortedPointsFromX.get(yIndex).getRight());
     }
 
-    private Tree tree(List<Row> rows, Function<Row, Cell> y, Supplier<Col> ySupplier, int lvl, int steps) {
+    public Tree tree(List<Row> rows, Function<Row, Cell> y, Supplier<Col> ySupplier, int lvl, int steps) {
         if (rows.size() >= (TreeConstants.MIN_OBS * 2)) {
             double lo = -1.0;
             List<Pair<Col, Col>> cut = null;
@@ -395,7 +402,7 @@ public class Table extends TblObject {
                 return new InnerTreeNode(kids, colName);
             }
         }
-        return new Leaf(getCol(rows, y, ySupplier));
+        return new Leaf(getCol(rows, y, ySupplier), rows, cols);
     }
 
     private List<Pair<Range, List<Row>>> split(List<Row> rows, Function<Row, Cell> x, List<Col> xRanges) {

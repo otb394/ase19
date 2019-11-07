@@ -4,12 +4,14 @@ public abstract class Col extends TblObject {
     protected int pos;
     protected String name;
     protected boolean skipped;
+    protected int weight;
 
-    public Col(int pos, String name) {
+    public Col(int pos, String name, int weight) {
         super();
         this.pos = pos;
         this.name = name;
         this.skipped = false;
+        this.weight = weight;
     }
 
     public void setName(String name) {
@@ -50,15 +52,10 @@ public abstract class Col extends TblObject {
 
     public abstract String getSummary();
 
-    public abstract String getMiddle();
+    public abstract Cell getMiddle();
 
     public double diffMiddle(Col other) {
-        String otherMiddle = other.getMiddle();
-        if (getMiddle().equals(otherMiddle)) {
-            return 0.0;
-        } else {
-            return Double.MAX_VALUE;
-        }
+        return getMiddle().diff(other.getMiddle());
     }
 
     public double dis(Cell a, Cell b) {
@@ -73,4 +70,12 @@ public abstract class Col extends TblObject {
     }
 
     public abstract Range toRange();
+
+    public int getWeight() {
+        return weight;
+    }
+
+    public double norm(Cell cell) {
+        return 1.0;
+    }
 }

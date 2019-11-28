@@ -1,5 +1,9 @@
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Num extends Col {
     private int count;
@@ -134,5 +138,69 @@ public class Num extends Col {
     @Override
     public double norm(Cell cell) {
         return ((hi != lo) ? (cell.diff(new NumberCell(lo)) / (hi - lo)) : (0.0));
+    }
+
+    @Override
+    public boolean same(Col col) {
+        if (col instanceof Num) {
+            Num otherNum = (Num) col;
+//            System.out.println("My mu = " + getMean());
+//            System.out.println("My sd = " + getSD());
+//            System.out.println("My count = " + getCount());
+//            System.out.println("Other mu = " + otherNum.getMean());
+//            System.out.println("Other sd = " + otherNum.getSD());
+//            System.out.println("Other count = " + otherNum.getCount());
+            return tTestSame(otherNum, 0.95) || hedges(otherNum, 0.38);
+        } else {
+            return false;
+        }
+    }
+
+    private boolean tTestSame(Num num, double conf) {
+        double nom = Math.abs(getMean() - num.getMean());
+        double s1 = getSD();
+        double s2 = num.getSD();
+        double denom = ((s1 + s2) != 0.0) ? Math.sqrt(s1/getCount() + s2/num.getCount()) : 1.0;
+        double df = Math.min(getCount() - 1, num.getCount() - 1);
+        return criticalValue(df, conf) >= nom/denom;
+    }
+
+    private double criticalValue(double df, double conf) {
+        double[] xs = new double[]{1,2,5,10,15,20,25,30,60,100};
+        Map<Double, List<Double>> ys = Map.of(0.9, List.of(3.078, 1.886,1.476,1.372,1.341, 1.325, 1.316, 1.31, 1.296, 1.29),
+                0.95, List.of(6.314, 2.92,  2.015, 1.812, 1.753, 1.725, 1.708, 1.697, 1.671, 1.66),
+                0.99, List.of(31.821, 6.965, 3.365, 2.764, 2.602, 2.528, 2.485, 2.457, 2.39,  2.364));
+        return interpolate(df, xs, ys.get(conf).stream().mapToDouble(i -> i).toArray());
+    }
+
+    private double interpolate(double x, double[] xs, double[] ys) {
+        if (x <= xs[0]) return ys[0];
+        if (x >= xs[xs.length-1]) return ys[ys.length-1];
+        double x0 = xs[0];
+        double y0 = ys[0];
+        List<Pair<Double, Double>> zipped = IntStream.range(0, xs.length)
+                .mapToObj(index -> Pair.of(xs[index], ys[index])).collect(Collectors.toList());
+        Pair<Double, Double> lastPr = null;
+        for(Pair<Double, Double> pr : zipped) {
+            lastPr = pr;
+            if ((x < x0) || (x > xs[xs.length-1]) || ((x0 <= x) && (x < pr.getLeft()))) {
+                break;
+            }
+            x0 = pr.getLeft();
+            y0 = pr.getRight();
+        }
+        double gap = (x - x0) / (lastPr.getLeft() - x0);
+        return y0 + gap*(lastPr.getRight() - y0);
+    }
+
+    private boolean hedges(Num num, double small) {
+        double thisSD = getSD();
+        double otherSD = num.getSD();
+        double numerator = (getCount()-1) * thisSD*thisSD + (num.getCount()-1)*otherSD*otherSD;
+        double denom = (getCount()-1) + (num.getCount()-1);
+        double sp = Math.sqrt(numerator / denom);
+        double delta = Math.abs(getMean() - num.getMean()) / sp;
+        double c = 1.0-(3.0/(4.0*(denom)-1.0));
+        return delta*c < small;
     }
 }

@@ -20,6 +20,12 @@ public class Cluster {
     }
 
     public Row getCentroid() {
+        List<Col> cols = getCols();
+        List<Cell> cells = cols.stream().map(Col::getMiddle).collect(Collectors.toList());
+        return new Row(0, cells, false);
+    }
+
+    public List<Col> getCols() {
         List<Col> cols = colSuppliers.stream().map(Supplier::get).collect(Collectors.toList());
         for(Row row : rows) {
             List<Cell> rowCells = row.getCells();
@@ -28,7 +34,14 @@ public class Cluster {
                 rowCells.get(i).addTo(cols.get(i));
             }
         }
-        List<Cell> cells = cols.stream().map(Col::getMiddle).collect(Collectors.toList());
-        return new Row(0, cells, false);
+        return cols;
+    }
+
+    public Table getTable() {
+        Table table = new Table("ClusterTable", getCols());
+        for (Row row : rows) {
+            table.addRow(row);
+        }
+        return table;
     }
 }

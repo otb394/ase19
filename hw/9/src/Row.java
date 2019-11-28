@@ -1,4 +1,5 @@
 import java.util.List;
+import java.util.Objects;
 import java.util.StringJoiner;
 
 public class Row extends TblObject {
@@ -107,5 +108,25 @@ public class Row extends TblObject {
             joiner.add(cell.toString());
         }
         System.out.println(joiner.toString());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Row row = (Row) o;
+        return pos == row.pos &&
+                isSkipped == row.isSkipped &&
+                isBlank == row.isBlank &&
+                cells.equals(row.cells);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pos, cells, isSkipped, isBlank);
+    }
+
+    public int getPos() {
+        return pos;
     }
 }

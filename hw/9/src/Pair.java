@@ -1,4 +1,5 @@
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class Pair<L, R> {
@@ -50,5 +51,19 @@ public class Pair<L, R> {
             Function<Pair<A,B>, B> fRight = Pair::getRight;
             return Comparator.comparing(fLeft).thenComparing(fRight).compare(this, abPair);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pair<?, ?> pair = (Pair<?, ?>) o;
+        return left.equals(pair.left) &&
+                right.equals(pair.right);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(left, right);
     }
 }

@@ -27,8 +27,8 @@ public class NumericalRange implements Range {
 
     @Override
     public String toString() {
-        String sl = Optional.ofNullable(low).map(low -> Double.toString(low)).orElse("-inf");
-        String sh = Optional.ofNullable(high).map(hi -> Double.toString(hi)).orElse("inf");
+        String sl = Optional.ofNullable(low).map(low -> String.format("%.2f", low)).orElse("-inf");
+        String sh = Optional.ofNullable(high).map(hi -> String.format("%.2f", hi)).orElse("inf");
         return sl + " .. " + sh;
     }
 

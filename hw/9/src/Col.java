@@ -78,4 +78,8 @@ public abstract class Col extends TblObject {
     public double norm(Cell cell) {
         return 1.0;
     }
+
+    public boolean same(Col col) {
+        return false;
+    }
 }

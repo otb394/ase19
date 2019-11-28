@@ -24,7 +24,7 @@ public class NumberCell implements Cell {
 
     @Override
     public String toString() {
-        return Double.toString(value);
+        return String.format("%.2f", value);
     }
 
     public double getValue() {

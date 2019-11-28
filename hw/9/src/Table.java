@@ -286,11 +286,11 @@ public class Table extends TblObject {
         return cluster(rows, s);
     }
 
-    private Tree cluster(List<Row> rows, int minSize) {
+    public Tree cluster(List<Row> rows, int minSize) {
         int N = rows.size();
         double n = N/2.0;
         if (N < minSize) {
-            return new ClusterLeaf(rows, my.goals, cols);
+            return new ClusterLeaf(rows, my.goals, cols, minSize);
         } else {
             int trialCount = 10;
             double best = -1.0;
@@ -309,16 +309,27 @@ public class Table extends TblObject {
                 }
             }
 
+//            System.out.println("Pivots");
+//            System.out.println("Left index = " + x.getPos());
+//            System.out.println("Right index = " + y.getPos());
+//            x.print();y.print();
+
             List<Row> left = new ArrayList<>();
             List<Row> right = new ArrayList<>();
             double c = x.dis(y, my.xs);
+//            System.out.println("c = " + c);
             Row finalX = x;
             Row finalY = y;
             List<Pair<Double, Row>> cosineDistances = rows.stream()
                     .map(row -> Pair.of(getCosineDistance(finalX, finalY, c, row), row))
                     .sorted(Comparator.comparing(Pair::getLeft))
                     .collect(Collectors.toList());
+            String cDisOutput = cosineDistances.stream()
+                    .map(pr -> "(" + pr.getRight().getPos() + "," + pr.getLeft() + ")")
+                    .collect(Collectors.joining(",", "[", "]"));
+//            System.out.println(cDisOutput);
             int medIndex = (N-1)/2;
+            double splitDistance = cosineDistances.get(medIndex).getLeft();
             for (int i = 0; i <= medIndex; i++) {
                 left.add(cosineDistances.get(i).getRight());
             }
@@ -326,9 +337,10 @@ public class Table extends TblObject {
                 right.add(cosineDistances.get(i).getRight());
             }
             if (left.size() < minSize || right.size() < minSize) {
-                return new ClusterLeaf(rows, my.goals, cols);
+                return new ClusterLeaf(rows, my.goals, cols, minSize);
             } else {
-                return new BinaryInnerTreeNode(cluster(left, minSize), cluster(right, minSize));
+                return new BinaryInnerTreeNode(cluster(left, minSize), cluster(right, minSize), finalX, finalY,
+                        (r1,r2) -> r1.dis(r2, my.xs), splitDistance);
             }
         }
     }
@@ -336,12 +348,15 @@ public class Table extends TblObject {
     private double getCosineDistance(Row x, Row y, double c, Row z) {
         double a = x.dis(z, my.xs);
         double b = z.dis(y, my.xs);
-        return (a*a + c*c - b*b) / (2.0*c);
+        double val = (a*a + c*c - b*b) / (2.0*c);
+//        System.out.println("val = " + val);
+        return val;
     }
 
     private Pair<Row, Row> getPivotPoints(List<Row> rows) {
         int n = rows.size();
         int randomIndex = new Random().nextInt(n);
+//        System.out.println("randomIndex = " + randomIndex);
         if (randomIndex < 0 || randomIndex >= n) {
             throw new RuntimeException("Error in generating random index");
         }
